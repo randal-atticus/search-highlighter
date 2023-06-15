@@ -32,11 +32,8 @@ import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.StemmerOverrideFilter;
 import org.apache.lucene.analysis.miscellaneous.WordDelimiterGraphFilter;
 import org.apache.lucene.analysis.pattern.PatternTokenizer;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.core.Booleans;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -513,7 +510,8 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
             return 0;
         }
 
-        // https://github.com/elastic/elasticsearch/blob/main/modules/analysis-common/src/main/java/org/elasticsearch/analysis/common/StemmerOverrideTokenFilterFactory.java
+        // https://github.com/elastic/elasticsearch/blob/main/modules/analysis-common/src/main/java/org/elasticsearch
+        // /analysis/common/StemmerOverrideTokenFilterFactory.java
         static void parseRules(List<String> rules, StemmerOverrideFilter.Builder builder, String mappingSep) {
             for (String rule : rules) {
                 String[] sides = rule.split(mappingSep, -1);

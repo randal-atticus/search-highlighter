@@ -30,7 +30,6 @@ import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.elasticsearch.common.lucene.search.function.ScoreFunction;
-import org.elasticsearch.index.mapper.DocumentParserContext;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
 

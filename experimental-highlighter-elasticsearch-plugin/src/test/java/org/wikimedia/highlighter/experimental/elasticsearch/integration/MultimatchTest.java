@@ -69,7 +69,8 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
 
         // Looks like phrase doesn't respect cutoff in multimatch
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = testSearch(multiMatchQuery("very simple", "test").type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX), hitSource(hitSource)).get();
+            SearchResponse response = testSearch(multiMatchQuery("very simple", "test")
+                    .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> <em>simple</em> test"));
         }
     }

@@ -18,7 +18,6 @@ import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.TextSearchInfo;
 import org.elasticsearch.search.fetch.subphase.highlight.FieldHighlightContext;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightUtils;
-import org.elasticsearch.search.fetch.subphase.highlight.LimitTokenOffsetAnalyzer;
 import org.elasticsearch.search.fetch.subphase.highlight.SearchHighlightContext;
 import org.wikimedia.highlighter.experimental.elasticsearch.ExperimentalHighlighter.HighlightExecutionContext;
 import org.wikimedia.highlighter.experimental.lucene.hit.PostingsHitEnum;
@@ -109,7 +108,8 @@ public class FieldWrapper {
 
     public List<String> getFieldValues() throws IOException {
         if (values == null) {
-            // RG: https://github.com/elastic/elasticsearch/blob/4751c3d34eca696101beb9be8e141c3c6f5318f4/server/src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java#L115
+            // RG: https://github.com/elastic/elasticsearch/blob/4751c3d34eca696101beb9be8e141c3c6f5318f4/server/
+            // src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java#L115
             // https://github.com/elastic/elasticsearch/pull/93193
             List<Object> objs = HighlightUtils.loadFieldValues(context.fieldType, context.context.getSearchExecutionContext(), context.hitContext);
             values = objs.stream().map(Object::toString).collect(toCollection(() -> new ArrayList<>(objs.size())));
@@ -354,7 +354,9 @@ public class FieldWrapper {
 
     public int getPositionGap() {
         if (this.positionGap == POSITION_GAP_INIT) {
-            this.positionGap = context.context.getSearchExecutionContext().getIndexAnalyzer(f -> Lucene.KEYWORD_ANALYZER).getPositionIncrementGap(context.fieldType.name());
+            this.positionGap = context.context.getSearchExecutionContext()
+                    .getIndexAnalyzer(f -> Lucene.KEYWORD_ANALYZER)
+                    .getPositionIncrementGap(context.fieldType.name());
         }
         return this.positionGap;
     }
