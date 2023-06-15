@@ -36,8 +36,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.xcontent.XContentBuilder;
+import org.elasticsearch.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -112,9 +112,9 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     public void multiValued() throws IOException {
         buildIndex();
         indexTestData(new String[] {"tests very simple test", "with two fields to test"});
-        client().prepareIndex("test", "_doc", "2")
+        client().prepareIndex("test").setId("2")
             .setSource("test", new String[] {"no match here", "this one"}, "fetched", new Integer[] {0, 1}).get();
-        client().prepareIndex("test", "_doc", "3")
+        client().prepareIndex("test").setId("3")
             .setSource("test", new String[] {"sentences.", "two sentences."}, "fetched", new Integer[] {0, 1}).get();
         refresh();
 
@@ -168,7 +168,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     @Test
     public void dataInOtherFields() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "_doc", "1")
+        client().prepareIndex("test").setId("1")
                 .setSource("test", "tests very simple test", "other",
                         "break me maybe?  lets make this pretty long tests").get();
         refresh();
@@ -182,7 +182,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     @Test
     public void dataInOtherDocuments() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "_doc", "2")
+        client().prepareIndex("test").setId("2")
                 .setSource("test", "break me maybe?  lets make this pretty long tests").get();
         indexTestData();
 
@@ -197,14 +197,14 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         buildIndex();
         // This is the doc we're looking for and it doesn't have a match in the
         // column we're highlighting
-        client().prepareIndex("test", "_doc", "1")
+        client().prepareIndex("test").setId("1")
                 .setSource("test", "no match here", "find_me", "test").get();
         // These docs have a match in the column we're highlighting. We need a
         // bunch of them to make sure some end up in the same segment as what
         // we're looking for.
         List<IndexRequestBuilder> extra = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            extra.add(client().prepareIndex("test", "_doc", "other " + i).setSource("test", "test"));
+            extra.add(client().prepareIndex("test").setId("other " + i).setSource("test", "test"));
         }
         indexRandom(true, extra);
 
@@ -332,7 +332,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
                     for (char l4 = 'a'; l4 <= 'z'; l4++) {
                         b.append('z').append(l1).append(l2).append(l3).append(l4).append(' ');
                     }
-                    request.add(client().prepareIndex("test", "_doc").setSource("test", b.toString()));
+                    request.add(client().prepareIndex("test").setSource("test", b.toString()));
                 }
             }
             request.get();
@@ -461,7 +461,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     @Test
     public void singleRangeQueryWithSmallRewrites() throws IOException {
         buildIndex(true, true, 1);
-        client().prepareIndex("test", "_doc", "2").setSource("test", "test").get();
+        client().prepareIndex("test").setId("2").setSource("test", "test").get();
         indexTestData();
 
         Map<String, Object> options = new HashMap<>();
@@ -523,7 +523,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
 
     public void testKeywordNormalizer() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "_doc", "1").setSource("keyword_field", "Héllö").get();
+        client().prepareIndex("test").setId("1").setSource("keyword_field", "Héllö").get();
         refresh();
         SearchResponse response = testSearch(matchQuery("keyword_field", "Hèllô"),
                 x -> x.field("keyword_field")).get();
@@ -536,7 +536,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         Map<String, Object> doc = new HashMap<>();
         doc.put("pos_gap_big", data);
         doc.put("pos_gap_small", data);
-        client().prepareIndex("test", "_doc", "1").setSource(doc).get();
+        client().prepareIndex("test").setId("1").setSource(doc).get();
         refresh();
         SearchResponse resp = client().prepareSearch().setQuery(QueryBuilders.matchPhraseQuery("pos_gap_big", "one gap"))
                 .highlighter(new HighlightBuilder()

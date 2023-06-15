@@ -1,6 +1,6 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.plugins.AnalysisPlugin.requiresAnalysisSettings;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
@@ -34,12 +34,12 @@ import org.apache.lucene.analysis.miscellaneous.WordDelimiterGraphFilter;
 import org.apache.lucene.analysis.pattern.PatternTokenizer;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.common.Booleans;
-import org.elasticsearch.common.ParseField;
+import org.elasticsearch.core.Booleans;
+import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
@@ -66,7 +66,7 @@ import com.google.common.collect.ImmutableList;
 //import org.elasticsearch.plugin.analysis.icu.AnalysisICUPlugin;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // do not care too much about complexity of test classes
-@ClusterScope(scope = ESIntegTestCase.Scope.SUITE, transportClientRatio = 0.0)
+@ClusterScope(scope = ESIntegTestCase.Scope.SUITE)
 public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends ESIntegTestCase {
     protected static final List<String> HIT_SOURCES = ImmutableList.of("postings", "vectors",
             "analyze");
@@ -275,7 +275,7 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
         settings.endObject();
         settings.endObject();
         settings.endObject();
-        assertAcked(prepareCreate("test").setSettings(settings).addMapping("_doc", mapping));
+        assertAcked(prepareCreate("test").setSettings(settings).setMapping(mapping));
         ensureYellow();
     }
 
@@ -320,7 +320,7 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
     }
 
     protected void indexTestData(Object contents) {
-        client().prepareIndex("test", "_doc", "1").setSource("test", contents).get();
+        client().prepareIndex("test").setId("1").setSource("test", contents).get();
         refresh();
     }
 
@@ -496,7 +496,7 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
         @Override
         public Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<? extends Analyzer>>> getAnalyzers() {
             return Collections.singletonMap("english",
-                    (isettings, env, name, settings) -> new AbstractIndexAnalyzerProvider<Analyzer>(isettings, name, settings) {
+                    (isettings, env, name, settings) -> new AbstractIndexAnalyzerProvider<Analyzer>(name, settings) {
                         @Override
                         public Analyzer get() {
                             return new EnglishAnalyzer(
@@ -513,22 +513,26 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
             return 0;
         }
 
+        // https://github.com/elastic/elasticsearch/blob/main/modules/analysis-common/src/main/java/org/elasticsearch/analysis/common/StemmerOverrideTokenFilterFactory.java
         static void parseRules(List<String> rules, StemmerOverrideFilter.Builder builder, String mappingSep) {
             for (String rule : rules) {
-                String key;
-                String override;
-                List<String> mapping = Strings.splitSmart(rule, mappingSep, false);
-                if (mapping.size() == 2) {
-                    key = mapping.get(0).trim();
-                    override = mapping.get(1).trim();
-                } else {
+                String[] sides = rule.split(mappingSep, -1);
+                if (sides.length != 2) {
                     throw new RuntimeException("Invalid Keyword override Rule:" + rule);
                 }
 
-                if (key.isEmpty() || override.isEmpty()) {
+                String[] keys = sides[0].split(",", -1);
+                String override = sides[1].trim();
+                if (override.isEmpty() || override.indexOf(',') != -1) {
                     throw new RuntimeException("Invalid Keyword override Rule:" + rule);
-                } else {
-                    builder.add(key, override);
+                }
+
+                for (String key : keys) {
+                    String trimmedKey = key.trim();
+                    if (trimmedKey.isEmpty()) {
+                        throw new RuntimeException("Invalid Keyword override Rule:" + rule);
+                    }
+                    builder.add(trimmedKey, override);
                 }
             }
         }
@@ -541,22 +545,8 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
         private final boolean preserveOriginal;
         ASCIIFoldingTokenFilterFactory(IndexSettings indexSettings, Environment environment,
                                               String name, Settings settings) {
-            super(indexSettings, name, settings);
-            if (indexSettings.getIndexVersionCreated().before(Version.V_6_0_0_alpha1)) {
-                //Only emit a warning if the setting's value is not a proper boolean
-                final String value = settings.get(PRESERVE_ORIGINAL.getPreferredName(), "false");
-                if (!Booleans.isBoolean(value)) {
-                    @SuppressWarnings("deprecation")
-                    boolean convertedValue = Booleans.parseBooleanLenient(settings.get(PRESERVE_ORIGINAL.getPreferredName()), DEFAULT_PRESERVE_ORIGINAL);
-                    deprecationLogger.deprecate("The value [{}] of setting [{}] is not coerced into boolean anymore. Please change " +
-                            "this value to [{}].", value, PRESERVE_ORIGINAL.getPreferredName(), String.valueOf(convertedValue));
-                    preserveOriginal =  convertedValue;
-                } else {
-                    preserveOriginal = settings.getAsBoolean(PRESERVE_ORIGINAL.getPreferredName(), DEFAULT_PRESERVE_ORIGINAL);
-                }
-            } else {
-                preserveOriginal = settings.getAsBoolean(PRESERVE_ORIGINAL.getPreferredName(), DEFAULT_PRESERVE_ORIGINAL);
-            }
+            super(name, settings);
+            preserveOriginal = settings.getAsBoolean(PRESERVE_ORIGINAL.getPreferredName(), DEFAULT_PRESERVE_ORIGINAL);
         }
 
         @Override
