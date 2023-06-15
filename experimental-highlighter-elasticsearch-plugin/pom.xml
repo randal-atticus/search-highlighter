@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikimedia.search.highlighter</groupId>
         <artifactId>experimental</artifactId>
-        <version>7.10.3-SNAPSHOT</version>
+        <version>8.8.0-SNAPSHOT</version>
     </parent>
     <artifactId>experimental-highlighter-elasticsearch-plugin</artifactId>
     <packaging>jar</packaging>
@@ -73,6 +73,13 @@
             <groupId>org.elasticsearch.test</groupId>
             <artifactId>framework</artifactId>
             <scope>test</scope>
+            <!-- elasticsearch-preallocate is missing for 8.8, https://github.com/elastic/elasticsearch/issues/96360 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.elasticsearch</groupId>
+                    <artifactId>elasticsearch-preallocate</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>

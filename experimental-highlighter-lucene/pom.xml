@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikimedia.search.highlighter</groupId>
         <artifactId>experimental</artifactId>
-        <version>7.10.3-SNAPSHOT</version>
+        <version>8.8.0-SNAPSHOT</version>
     </parent>
     <artifactId>experimental-highlighter-lucene</artifactId>
     <packaging>jar</packaging>
@@ -56,7 +56,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-analyzers-common</artifactId>
+            <artifactId>lucene-analysis-common</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
