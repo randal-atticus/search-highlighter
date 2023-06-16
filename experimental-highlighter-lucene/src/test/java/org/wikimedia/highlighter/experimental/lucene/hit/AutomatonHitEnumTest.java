@@ -19,7 +19,7 @@ import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
-    private final AutomatonHitEnum.Factory factory = AutomatonHitEnum.factory("[a-zA-Z]+", Operations.DEFAULT_MAX_DETERMINIZED_STATES);
+    private final AutomatonHitEnum.Factory factory = AutomatonHitEnum.factory("[a-zA-Z]+", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT);
 
     @Override
     protected HitEnum buildEnum(String str) {
@@ -30,7 +30,7 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void specificWords() {
         String source = "hero of legend";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory("hero|legend", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        HitEnum e = AutomatonHitEnum.factory("hero|legend", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, advances());
@@ -42,7 +42,7 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void wordsNextToOneAnother() {
         String source = "herolegend";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory("hero|legend", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        HitEnum e = AutomatonHitEnum.factory("hero|legend", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, advances());
@@ -54,12 +54,12 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void partialWithStar() {
         String source = "hero of legend";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory("her.*f", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        HitEnum e = AutomatonHitEnum.factory("her.*f", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero of")));
         assertThat(e, isEmpty());
 
-        e = AutomatonHitEnum.factory("her.*o", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        e = AutomatonHitEnum.factory("her.*o", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero o")));
         assertThat(e, isEmpty());
@@ -69,12 +69,12 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void partialWithQuestion() {
         String source = "hero of legend";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory("her.?", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        HitEnum e = AutomatonHitEnum.factory("her.?", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, isEmpty());
 
-        e = AutomatonHitEnum.factory("her.?o", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        e = AutomatonHitEnum.factory("her.?o", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, isEmpty());
@@ -84,12 +84,12 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void unicode() {
         String source = "The common Chinese names for the country are Zhōngguó (Chinese: 中国, from zhōng, \"central\"";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory("from", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        HitEnum e = AutomatonHitEnum.factory("from", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("from")));
         assertThat(e, isEmpty());
 
-        e = AutomatonHitEnum.factory("国", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        e = AutomatonHitEnum.factory("国", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("国")));
         assertThat(e, isEmpty());
@@ -99,7 +99,7 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void leadingWildcardPerformance() {
         String source = makeLongSource();
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory(".*(hero|legend)", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        HitEnum e = AutomatonHitEnum.factory(".*(hero|legend)", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         long start = System.nanoTime();
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, containsString("legend")));
@@ -117,12 +117,12 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
         // conditions
         String source = "some words will do wherever they queue";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory(".*w", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        HitEnum e = AutomatonHitEnum.factory(".*w", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("some words will do w")));
         assertThat(e, isEmpty());
 
-        e = AutomatonHitEnum.factory(".*w", Operations.DEFAULT_MAX_DETERMINIZED_STATES).build(source);
+        e = AutomatonHitEnum.factory(".*w", Operations.DEFAULT_DETERMINIZE_WORK_LIMIT).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("some words will do w")));
         assertThat(e, isEmpty());

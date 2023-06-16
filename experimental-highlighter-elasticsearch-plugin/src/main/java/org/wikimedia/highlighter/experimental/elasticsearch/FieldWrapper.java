@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.TextSearchInfo;
@@ -72,11 +73,11 @@ public class FieldWrapper {
     public FieldWrapper(HighlightExecutionContext executionContext, FieldHighlightContext context,
             BasicQueryWeigher weigher, String fieldName) {
         assert !context.fieldName.equals(fieldName);
-        MappedFieldType fieldType = context.context.mapperService().fieldType(fieldName);
+        MappedFieldType fieldType = context.context.getSearchExecutionContext().getFieldType(fieldName);
         this.executionContext = executionContext;
 
         this.context = new FieldHighlightContext(fieldName, context.field, fieldType, context.context, context.hitContext,
-                context.query, false, context.cache);
+                context.query, context.cache);
         this.weigher = weigher;
     }
 
@@ -107,8 +108,10 @@ public class FieldWrapper {
 
     public List<String> getFieldValues() throws IOException {
         if (values == null) {
-            boolean forceSource = context.forceSource;
-            List<Object> objs = HighlightUtils.loadFieldValues(context.fieldType, context.hitContext, forceSource);
+            // RG: https://github.com/elastic/elasticsearch/blob/4751c3d34eca696101beb9be8e141c3c6f5318f4/server/
+            // src/main/java/org/elasticsearch/search/fetch/subphase/highlight/PlainHighlighter.java#L115
+            // https://github.com/elastic/elasticsearch/pull/93193
+            List<Object> objs = HighlightUtils.loadFieldValues(context.fieldType, context.context.getSearchExecutionContext(), context.hitContext);
             values = objs.stream().map(Object::toString).collect(toCollection(() -> new ArrayList<>(objs.size())));
         }
         return values;
@@ -268,13 +271,10 @@ public class FieldWrapper {
     }
 
     private HitEnum buildTokenStreamHitEnum() throws IOException {
-        Analyzer analyzer = context.fieldType.indexAnalyzer();
-
-        if (analyzer == null) {
-            analyzer = context.context.mapperService().indexAnalyzer();
-        }
+        Analyzer analyzer = context.context.getSearchExecutionContext().getIndexAnalyzer(f -> Lucene.KEYWORD_ANALYZER);
         return buildTokenStreamHitEnum(analyzer);
     }
+
 
     private HitEnum buildTokenStreamHitEnum(final Analyzer analyzer) throws IOException {
         List<String> fieldValues = getFieldValues();
@@ -354,7 +354,9 @@ public class FieldWrapper {
 
     public int getPositionGap() {
         if (this.positionGap == POSITION_GAP_INIT) {
-            this.positionGap = context.fieldType.indexAnalyzer().getPositionIncrementGap(context.fieldType.name());
+            this.positionGap = context.context.getSearchExecutionContext()
+                    .getIndexAnalyzer(f -> Lucene.KEYWORD_ANALYZER)
+                    .getPositionIncrementGap(context.fieldType.name());
         }
         return this.positionGap;
     }
